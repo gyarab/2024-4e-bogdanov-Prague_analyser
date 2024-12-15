@@ -9,25 +9,21 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
 
 public class App extends Application {
 
 
+
     @Override
-    public void start(Stage stage) {
+    public void start(Stage stage) throws Exception {
 
         Map mapVal = new Map();
-        Pane mapPane = new Pane();//mapVal.makeMap(10);
-
-
-        Image tileImage = new Image("https://a.tile.openstreetmap.org/10/553/346.png",256,256, false, false);
-        ImageView tileView = new ImageView(tileImage);
-
-        mapPane.getChildren().add(tileView);
-
+        //Pane mapPane = mapVal.makeMap(10);
 
         // Nastavení scény a zobrazení
-        Scene scene = new Scene(mapPane, 512, 512);//mapVal.TILE_SIZE * (mapVal.WIDTH), mapVal.TILE_SIZE * (mapVal.HEIGHT));
+        Scene scene = new Scene(mapVal.makeMap(10), mapVal.TILE_SIZE * (mapVal.WIDTH), mapVal.TILE_SIZE * (mapVal.HEIGHT));
         stage.setTitle("OSM Map Viewer - Praha");
         stage.setScene(scene);
         stage.show();
