@@ -3,21 +3,27 @@ package com.example.prague_analyser;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.RowConstraints;
 
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class Map {
+public class Maps {
 
     public static final int TILE_SIZE = 256;
 
     public int WIDTH = 0;
     public int HEIGHT = 0;
 
-    public Pane makeMap(int zoom) throws Exception {
+    private final Map<String, Image> rememberTile = new HashMap<>();
+
+    public Pane makeMap(int zoom, double scaleFactor) throws Exception {
         GridPane mapPane = new GridPane();
 
 
@@ -39,18 +45,31 @@ public class Map {
         WIDTH = ctMax.xtile - ctMin.xtile + 1;
         HEIGHT = - ctMax.ytile + ctMin.ytile + 1;
 
+
+        mapPane.getChildren().clear();
+
+
         for (int x = ctMin.xtile; x <= ctMax.xtile; x++) {
             for (int y = ctMin.ytile; y >= ctMax.ytile; y--) {
                 String tileURL = "https://tile.openstreetmap.org/"+zoom+"/"+x+"/"+y+".png";
 
-                Image tileImage = loadImageWithUserAgent(tileURL, TILE_SIZE, TILE_SIZE);
+                Image tileImage = rememberTile.get(tileURL);
+
+                if (tileImage == null) {
+                    tileImage = loadImageWithUserAgent(tileURL, TILE_SIZE, TILE_SIZE);
+                    if (tileImage != null) {
+                        rememberTile.put(tileURL, tileImage);
+                    } else {
+                        continue;
+                    }
+                }
 
                 ImageView tileView = new ImageView(tileImage);
 
-                tileView.setX((x - ctMin.xtile * TILE_SIZE));
-                tileView.setY((y - ctMin.ytile) * TILE_SIZE);
+                tileView.setFitWidth(TILE_SIZE * scaleFactor);
+                tileView.setFitHeight(TILE_SIZE * scaleFactor);
 
-                mapPane.add(tileView, x, y);
+                mapPane.add(tileView, x - ctMin.xtile, y-ctMax.ytile);
 
                 //TimeUnit.MILLISECONDS.sleep(500);
             }
