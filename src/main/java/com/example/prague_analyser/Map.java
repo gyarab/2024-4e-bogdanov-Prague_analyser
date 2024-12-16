@@ -3,6 +3,7 @@ package com.example.prague_analyser;
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 
 import java.net.URL;
@@ -17,7 +18,7 @@ public class Map {
     public int HEIGHT = 0;
 
     public Pane makeMap(int zoom) throws Exception {
-        Pane mapPane = new Pane();
+        GridPane mapPane = new GridPane();
 
 
         //Severovýchodní roh
@@ -40,7 +41,7 @@ public class Map {
 
         for (int x = ctMin.xtile; x <= ctMax.xtile; x++) {
             for (int y = ctMin.ytile; y >= ctMax.ytile; y--) {
-                String tileURL = "https://tile.openstreetmap.org/10/"+x+"/"+y +".png";
+                String tileURL = "https://tile.openstreetmap.org/"+zoom+"/"+x+"/"+y+".png";
 
                 Image tileImage = loadImageWithUserAgent(tileURL, TILE_SIZE, TILE_SIZE);
 
@@ -49,7 +50,7 @@ public class Map {
                 tileView.setX((x - ctMin.xtile * TILE_SIZE));
                 tileView.setY((y - ctMin.ytile) * TILE_SIZE);
 
-                mapPane.getChildren().addAll(tileView);
+                mapPane.add(tileView, x, y);
 
                 //TimeUnit.MILLISECONDS.sleep(500);
             }
