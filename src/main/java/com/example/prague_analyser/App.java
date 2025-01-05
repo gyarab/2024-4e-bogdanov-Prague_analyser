@@ -1,19 +1,13 @@
 package com.example.prague_analyser;
 
+import com.example.prague_analyser.OSM.Maps;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.transform.Scale;
 import javafx.stage.Stage;
-
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 
 public class App extends Application {
 

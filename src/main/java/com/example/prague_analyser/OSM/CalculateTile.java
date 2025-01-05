@@ -1,4 +1,4 @@
-package com.example.prague_analyser;
+package com.example.prague_analyser.OSM;
 
 public class CalculateTile {
 
