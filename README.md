@@ -5,4 +5,4 @@ This program going to cut Prague city it to the zones depending on services.
 ## TODO
 - make map more responsible
 - add points
-- Voronoi diagram
+
