@@ -5,6 +5,7 @@ public class CalculateTile {
     int xtile;
     int ytile;
 
+
     public CalculateTile() {
         this.xtile = 0;
         this.ytile = 0;
@@ -25,4 +26,5 @@ public class CalculateTile {
         if (ytile >= (1 << zoom))
             ytile = ((1 << zoom) - 1);
     }
+
 }
