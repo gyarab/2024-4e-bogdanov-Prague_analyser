@@ -2,8 +2,8 @@ package com.example.prague_analyser.FortunesALG.VoronoiGraph;
 
 public class Point implements  Comparable<Point>{
 
-    double x;
-    double y;
+    public double x;
+    public double y;
 
     public Point(double x, double y) {
         this.x = x;

@@ -1,16 +1,20 @@
 package com.example.prague_analyser.OSM;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 
+import com.example.prague_analyser.FortunesALG.VoronoiGraph.Point;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+
+import static com.example.prague_analyser.OSM.CalculateTile.getConvertedNodesCoord;
 
 
 public class ServicesOnMap {
@@ -36,28 +40,16 @@ public class ServicesOnMap {
         }
         if(serviceType.equals("Lekarna")){
             query = """
-                    (
-                      node["highway"="bus_stop"](area.searchArea);
-                      node["public_transport"="platform"]["bus"="yes"](area.searchArea);
-                    );
+                    node["amenity"="pharmacy"](area.searchArea);
                     """;
 
-        }
-        if(serviceType.equals("Nemocnice")){
-            query = """
-                    (
-                      node["amenity"="hospital"](area.searchArea);
-                      way["amenity"="hospital"](area.searchArea);
-                      relation["amenity"="hospital"](area.searchArea);
-                    );
-                    """;
         }
 
     }
 
 
-    public ArrayList<double[]>  serviceCoords() {
-        ArrayList<double[]> listCord = new ArrayList<>();
+    public ArrayList<Point>  serviceCoords(Maps stat) {
+        ArrayList<Point> listCord = new ArrayList<>();
 
         OkHttpClient client = new OkHttpClient();
         String overpassUrl = "https://overpass-api.de/api/interpreter";
@@ -76,33 +68,56 @@ public class ServicesOnMap {
                 .get()
                 .build();
 
-        try (Response response = client.newCall(request).execute()) {
-            if (response.body() != null) {
-                String jsonResponse = response.body().string();
-                listCord = extractCoordinates(jsonResponse);
+        int maxRetries = 3; // Maximum number of retries
+        int retryCount = 0; // Current retry count
+        long retryDelay = 20; // Delay between retries in milliseconds
+
+        while (retryCount < maxRetries) {
+            try (Response response = client.newCall(request).execute()) {
+                if (response.body() != null) {
+                    String jsonResponse = response.body().string();
+                    listCord = extractCoordinates(jsonResponse, stat);
+                    return listCord; // Return the result if successful
+                } else {
+                    System.out.println("Response body is null.");
+                }
+            } catch (SocketException e) {
+                System.out.println("SocketException occurred: " + e.getMessage());
+            } catch (IOException e) {
+                System.out.println("IOException occurred: " + e.getMessage());
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+
+            // Increment the retry count and wait before retrying
+            retryCount++;
+            System.out.println("Retrying... (" + retryCount + "/" + maxRetries + ")");
+            try {
+                Thread.sleep(retryDelay); // Wait before the next retry
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt(); // Restore interrupted status
+            }
         }
 
         return listCord;
     }
 
-    private ArrayList<double[]> extractCoordinates(String jsonResponse) throws IOException {
+    private ArrayList<Point> extractCoordinates(String jsonResponse, Maps stat) throws IOException {
 
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(jsonResponse);
         JsonNode elements = rootNode.path("elements");
 
-        ArrayList<double[]> listCord = new ArrayList<>();
+        ArrayList<Point> listCord = new ArrayList<>();
 
         for (JsonNode element : elements) {
-            double[] arrCord = {
+            Point point = getConvertedNodesCoord(
                     element.path("lat").asDouble(),
-                    element.path("lon").asDouble()
-            };
+                    element.path("lon").asDouble(),
+                    50.1764594,14.2377536,
+                    stat.min.zoom
+                    );
+            System.out.println(point.x+"  " + point.y);
 
-            listCord.add(arrCord);
+            listCord.add(point);
         }
         return listCord;
     }

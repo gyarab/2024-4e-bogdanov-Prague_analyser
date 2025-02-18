@@ -19,30 +19,30 @@ public class Maps {
     public int WIDTH = 0;
     public int HEIGHT = 0;
 
+    //Severovýchodní roh Prahy
+    double latMax = 50.1504d;
+    double lonMax = 14.7275d;
+
+    //Jihozápadní roh Prahy
+    double latMin = 49.9419d;
+    double lonMin = 14.2601d;
+
+    CalculateTile min = new CalculateTile();
+
     private final Map<String, Image> rememberTile = new HashMap<>();
 
-    public Pane makeMap(int zoom, double scaleFactor) throws Exception {
+    public Pane makeMap(int zoom) throws Exception {
         GridPane mapPane = new GridPane();
-
-
-        //Severovýchodní roh
-        double latMax = 50.1404d;
-        double lonMax = 14.7275d;
 
         CalculateTile ctMax = new CalculateTile();
         ctMax.getIntTile(latMax, lonMax, zoom);
 
-
-        //Jihozápadní roh
-        double latMin = 49.9419d;
-        double lonMin = 14.2601d;
-
         CalculateTile ctMin = new CalculateTile();
         ctMin.getIntTile(latMin, lonMin, zoom);
+        min.getIntTile(latMax, lonMax, zoom);
 
         WIDTH = ctMax.xtile - ctMin.xtile + 1;
         HEIGHT = - ctMax.ytile + ctMin.ytile + 1;
-
 
         mapPane.getChildren().clear();
 
@@ -64,12 +64,11 @@ public class Maps {
 
                 ImageView tileView = new ImageView(tileImage);
 
-                tileView.setFitWidth(TILE_SIZE * scaleFactor);
-                tileView.setFitHeight(TILE_SIZE * scaleFactor);
+                tileView.setFitWidth(TILE_SIZE);
+                tileView.setFitHeight(TILE_SIZE);
 
                 mapPane.add(tileView, x - ctMin.xtile, y-ctMax.ytile);
 
-                //TimeUnit.MILLISECONDS.sleep(500);
             }
 
         }
