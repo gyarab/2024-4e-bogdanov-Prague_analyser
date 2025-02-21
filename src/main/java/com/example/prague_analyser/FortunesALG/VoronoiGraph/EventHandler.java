@@ -1,22 +1,25 @@
 package com.example.prague_analyser.FortunesALG.VoronoiGraph;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.PriorityQueue;
+import java.util.*;
 
 public class EventHandler {
 
     List<Point> sites;
-    List <Edge> edges;
+    public List <Edge> edges;
     PriorityQueue<Event> events;
     Parabola root;
+
+    double CORNER_EDGE_WIDTH;
+    double CORNER_EDGE_HEIGHT;
 
     double width = 1;
     double height = 1;
 
     double currentY;
 
-    public EventHandler(List<Point> sites){
+    public EventHandler(List<Point> sites, double CORNER_EDGE_WIDTH, double CORNER_EDGE_HEIGHT){
+        this.CORNER_EDGE_HEIGHT = CORNER_EDGE_HEIGHT;
+        this.CORNER_EDGE_WIDTH = CORNER_EDGE_WIDTH;
         this.sites = sites;
         edges = new ArrayList<Edge>();
         generateVoronoi();
@@ -25,37 +28,49 @@ public class EventHandler {
     // Main method for generating the Voronoi diagram using Fortune's algorithm
     private void  generateVoronoi(){
 
+        // Remove duplicate points
+        removeDuplicatePoints();
+
+        // Perturb points with the same y-coordinate to ensure uniqueness
+        perturbPoints();
+
+        // Sort sites by y-coordinate (descending), and by x-coordinate if y-coordinates are equal
+        Collections.sort(sites, new Comparator<Point>() {
+            @Override
+            public int compare(Point p1, Point p2) {
+                if (p1.y == p2.y) {
+                    return Double.compare(p1.x, p2.x); // Sort by x-coordinate if y-coordinates are equal
+                }
+                return Double.compare(p2.y, p1.y); // Sort in descending order of y-coordinate
+            }
+        });
+
         // Initialize the event queue with site events
-        events = new PriorityQueue <Event>();
+        events = new PriorityQueue<Event>();
         for (Point p : sites) {
             events.add(new Event(p, Event.LOCAL_EVENT));
         }
 
         // process events (sweep line)
-        int count = 0;
         while (!events.isEmpty()) {
             Event e = events.remove();
-
             // Update the sweep line position
             currentY = e.p.y;
-            count++;
             if (e.type == Event.LOCAL_EVENT) {
                 handleSite(e.p);
-            }
-            else {
+            } else {
                 handleCircle(e);
             }
         }
 
         // Complete remaining edges after processing all events
-        // Set sweep line to a position beyond the bounding
-        currentY = width+height;
+        currentY = CORNER_EDGE_HEIGHT + CORNER_EDGE_WIDTH;
 
         // close off any dangling edges
         endEdges(root);
 
-        // get rid of those crazy inifinte lines
-        for (Edge e: edges){
+        // get rid of those crazy infinite lines
+        for (Edge e : edges) {
             if (e.neighbour != null) {
                 e.start = e.neighbour.end;
                 e.neighbour = null;
@@ -63,22 +78,53 @@ public class EventHandler {
         }
     }
 
+    // Remove duplicate points
+    private void removeDuplicatePoints() {
+        Set<Point> uniquePoints = new HashSet<>();
+        List<Point> uniqueSites = new ArrayList<>();
+
+        for (Point p : sites) {
+            if (!uniquePoints.contains(p)) {
+                uniquePoints.add(p);
+                uniqueSites.add(p);
+            }
+        }
+        sites = uniqueSites;
+    }
+
+    // Perturb points with the same y-coordinate to ensure uniqueness
+    private void perturbPoints() {
+        double epsilon = 1e-10; // Small perturbation value
+        Map<Double, Integer> yCount = new HashMap<>();
+
+        for (Point p : sites) {
+            if (yCount.containsKey(p.y)) {
+                yCount.put(p.y, yCount.get(p.y) + 1);
+                p.y += yCount.get(p.y) * epsilon; // Perturb y-coordinate
+            } else {
+                yCount.put(p.y, 0);
+            }
+        }
+    }
+
+
     // Recursively close off edges that extend to infinity
-    private void endEdges(Parabola p){
+    private void endEdges(Parabola p) {
         if (p.type == Parabola.CENTER) {
             p = null;
             return;
         }
 
         double x = getXofEdge(p);
-        p.edge.end = new Point (x, p.edge.slope*x+p.edge.y);
+        p.edge.end = new Point(x, p.edge.slope * x + p.edge.y);
         edges.add(p.edge);
 
         endEdges(p.leftChild);
         endEdges(p.rightChild);
 
-        p = null;
+        p=null;
     }
+
 
 
     // Handles a site event (new point added to the beach line)
@@ -121,6 +167,7 @@ public class EventHandler {
     }
 
     private void handleCircle(Event e) {
+        if (e.arc == null) return;
 
         // find p0, p1, p2 that generate this event from left to right
         Parabola p1 = e.arc;
@@ -129,6 +176,14 @@ public class EventHandler {
         Parabola p0 = Parabola.getLeftChild(xl);
         Parabola p2 = Parabola.getRightChild(xr);
 
+        if (p0.event != null) {
+            events.remove(p0.event);
+            p0.event = null;
+        }
+        if (p2.event != null) {
+            events.remove(p2.event);
+            p2.event = null;
+        }
         // Remove associated circle events for p0 and p2
         if (p0.event != null) {
             events.remove(p0.event);
@@ -189,11 +244,11 @@ public class EventHandler {
 
         if (a == null || c == null || a.point == c.point) return;
 
-        if (ccw(a.point,b.point,c.point) != 1) return;
+        if (ccw(a.point, b.point, c.point) != 1) return;
 
         // edges will intersect to form a vertex for a circle event
         Point start = getEdgeIntersection(leftP.edge, rightP.edge);
-        if (start == null) return;
+        if (start == null ) return;
 
         // compute radius
         double dx = b.point.x - start.x;
@@ -220,21 +275,23 @@ public class EventHandler {
 
     // returns intersection of the lines of with vectors a and b
     private Point getEdgeIntersection(Edge a, Edge b) {
-
         if (b.slope == a.slope && b.y != a.y) return null;
 
-        double x = (b.y - a.y)/(a.slope - b.slope);
-        double y = a.slope*x + a.y;
+        double x = (b.y - a.y) / (a.slope - b.slope);
+        double y = a.slope * x + a.y;
 
         return new Point(x, y);
     }
 
+
     // returns current x-coordinate of an unfinished edge
     private double getXofEdge (Parabola par) {
-        //find intersection of two parabolas
+        if (par == null) return 0;
 
         Parabola left = Parabola.getLeftChild(par);
         Parabola right = Parabola.getRightChild(par);
+
+        //if (left == null || right == null) return 0;
 
         Point p = left.point;
         Point r = right.point;
@@ -268,9 +325,9 @@ public class EventHandler {
     private Parabola getParabolaByX (double xx) {
         Parabola par = root;
         double x = 0;
-        while (par.type == Parabola.VERTEX) {
+        while (par != null && par.type == Parabola.VERTEX) {
             x = getXofEdge(par);
-            if (x>xx) par = par.leftChild;
+            if (x > xx) par = par.leftChild;
             else par = par.rightChild;
         }
         return par;
@@ -286,5 +343,5 @@ public class EventHandler {
         return (a1*x*x + b1*x + c1);
     }
 
-    
+
 }

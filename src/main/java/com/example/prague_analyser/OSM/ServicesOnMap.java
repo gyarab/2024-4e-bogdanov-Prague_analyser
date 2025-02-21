@@ -5,6 +5,8 @@ import java.net.SocketException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 
 import com.example.prague_analyser.FortunesALG.VoronoiGraph.Point;
@@ -18,12 +20,13 @@ import static com.example.prague_analyser.OSM.CalculateTile.getConvertedNodesCoo
 
 
 public class ServicesOnMap {
-
+    int TYPE = 0;
     String query;
 
     public void serviceType(String serviceType){
 
         if(serviceType.equals("Metro")){
+            TYPE = 1;
             query = """
                     node["railway"="station"]["station"="subway"](area.searchArea);
                     """;
@@ -31,6 +34,7 @@ public class ServicesOnMap {
         //ujistit se, ze zastavka tam je jen jednou
         //Praha na Slovensku = problem
         if(serviceType.equals("Bus")){
+            TYPE = 1;
             query = """
                     (
                       node["highway"="bus_stop"](area.searchArea);
@@ -39,6 +43,7 @@ public class ServicesOnMap {
                     """;
         }
         if(serviceType.equals("Lekarna")){
+            TYPE = 0;
             query = """
                     node["amenity"="pharmacy"](area.searchArea);
                     """;
@@ -55,12 +60,13 @@ public class ServicesOnMap {
         String overpassUrl = "https://overpass-api.de/api/interpreter";
         String fullQuery = """
                 [out:json];
-                area[name="Praha"]->.searchArea;
+                area["ISO3166-1"="CZ"]->.cz;
+                area["name"="Praha"]["admin_level"="8"](area.cz)->.searchArea; 
                 """
                 + query +
                 """
                 out body;
-                """;
+                """; // musi byt nastaveno v Čr, protože Praha je i na Slovensku
 
         String encodedQuery = URLEncoder.encode(fullQuery, StandardCharsets.UTF_8);
         Request request = new Request.Builder()
@@ -108,16 +114,37 @@ public class ServicesOnMap {
 
         ArrayList<Point> listCord = new ArrayList<>();
 
-        for (JsonNode element : elements) {
-            Point point = getConvertedNodesCoord(
-                    element.path("lat").asDouble(),
-                    element.path("lon").asDouble(),
-                    50.1764594,14.2377536,
-                    stat.min.zoom
-                    );
-            System.out.println(point.x+"  " + point.y);
+        //staci jedna zastavka
+        if(TYPE == 1) {
+            HashMap<String, double[]> uniqueElement = new HashMap();
+            for (JsonNode element : elements) {
+                uniqueElement.put(
+                        element.get("tags").path("name").asText(),
+                        new double[]{element.path("lat").asDouble(), element.path("lon").asDouble()}
+                );
+            }
 
-            listCord.add(point);
+            for (String key : uniqueElement.keySet()) {
+                System.out.println(key +" "+uniqueElement.get(key)[0]+ " " + uniqueElement.get(key)[1]);
+                Point point = getConvertedNodesCoord(
+                        uniqueElement.get(key)[0],
+                        uniqueElement.get(key)[1],
+                        50.1764594, 14.2377536,
+                        stat.min.zoom
+                );
+                listCord.add(point);
+            }
+        } else {
+            for (JsonNode element : elements) {
+                Point point = getConvertedNodesCoord(
+                        element.path("lat").asDouble(),
+                        element.path("lon").asDouble(),
+                        50.1764594, 14.2377536,
+                        stat.min.zoom
+                );
+
+                listCord.add(point);
+            }
         }
         return listCord;
     }

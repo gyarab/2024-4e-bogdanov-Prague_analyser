@@ -7,7 +7,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 
 
-import java.net.URL;
+import java.net.URI;;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
@@ -75,8 +75,8 @@ public class Maps {
         return mapPane;
     }
     private Image loadImageWithUserAgent(String tileUrl, double width, double height) throws Exception {
-        URL url = new URL(tileUrl);
-        URLConnection connection = url.openConnection();
+        URI url = new URI(tileUrl);
+        URLConnection connection = url.toURL().openConnection();
         connection.setRequestProperty("User-Agent", "JavaFX OSM Map Viewer");
         return new Image(connection.getInputStream(), width, height, false, false);
     }
