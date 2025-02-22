@@ -13,7 +13,12 @@ public class Edge {
     double slope;
     double y;
 
-    public Edge(Point first, Point left, Point right){
+    public Edge(Point first, Point left, Point right, double width, double height){
+        if(first.x < 0)first.x = 0;
+        if(first.x > width)first.x = width;
+        if(first.y < 0)first.y = 0;
+        if(first.y > height)first.y = height;
+
         start = first;
         this.left = left;
         this.right = right;
@@ -28,32 +33,60 @@ public class Edge {
         y = middle.y - slope* middle.x;
     }
 
-   public void setEnd(Point end, double width, double height) {
-       //zkontrolujeme prusecik s hranici
-       if(((end.y >= 0) && (end.y <= height)) && ((end.x >= 0) && (end.x < width))){this.end = end;}
-       //rekurzivne zkontrolujeme, kdyby po vypoctu nesedela podminka
-       //y = a*x + b
-       else if(end.y < 0){
-           double a = (end.y - start.y) / (end.x - start.x);
-           double b = start.y - (a * start.x);
-           double v = (0 - b) / a;
-           setEnd(new Point(v, 0), width, height);
-       }else if(end.y > height){
-           double a = (end.y - start.y) / (end.x - start.x);
-           double b = start.y - (a * start.x);
-           double v = (0 - b) / a;
-           setEnd(new Point(v, height), width, height);
-       }
-       if(end.x < 0){
-           double a = (end.x - start.x)/(end.y - start.y);
-           double b = start.x - (a * start.y);
-           double v = (0 - b) / a;
-           setEnd(new Point(width, v), width, height);
-       }else if(end.x > width){
-           double a = (end.x - start.x)/(end.y - start.y);
-           double b = start.x - (a * start.y);
-           double v = (width - b) / a;
-           setEnd(new Point(width, v), width, height);
-       }
-   }
+    public void setEnd(Point end, double width, double height) {
+        double x1 = start.x, y1 = start.y;
+        double x2 = end.x, y2 = end.y;
+
+        // Pokud je bod už uvnitř oblasti, použijeme ho přímo
+        if ((x2 >= 0 && x2 <= width) && (y2 >= 0 && y2 <= height)) {
+            this.end = end;
+            return;
+        }
+
+        // Vypočítáme směrnici přímky (pozor na dělení nulou)
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+
+        if (dx == 0) { // Vertikální čára
+            y2 = (y2 < 0) ? 0 : height;
+        } else if (dy == 0) { // Horizontální čára
+            x2 = (x2 < 0) ? 0 : width;
+        } else {
+            double a = dy / dx;
+            double b = y1 - a * x1;
+
+            double newX = x2, newY = y2;
+
+            // Průsečík s horní hranou (y = 0)
+            if (y2 < 0) {
+                newX = (-b) / a;
+                newY = 0;
+            }
+            // Průsečík s dolní hranou (y = height)
+            else if (y2 > height) {
+                newX = (height - b) / a;
+                newY = height;
+            }
+
+            // Pokud je průsečík mimo levý nebo pravý okraj, opravíme jej
+            if (newX < 0) {
+                newY = b;
+                newX = 0;
+            } else if (newX > width) {
+                newY = a * width + b;
+                newX = width;
+            }
+
+            x2 = newX;
+            y2 = newY;
+        }
+
+        // **Dvojitá kontrola, zda je bod v rámci hranic**
+        x2 = Math.max(0, Math.min(x2, width));
+        y2 = Math.max(0, Math.min(y2, height));
+
+        // Nastavíme opravený konec čáry
+        this.end = new Point(x2, y2);
+    }
+
 }

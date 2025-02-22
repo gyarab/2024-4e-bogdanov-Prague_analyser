@@ -116,7 +116,7 @@ public class EventHandler {
         }
 
         double x = getXofEdge(p);
-        p.edge.end = new Point(x, p.edge.slope * x + p.edge.y);
+        p.edge.setEnd(new Point(x, p.edge.slope * x + p.edge.y), CORNER_EDGE_WIDTH, CORNER_EDGE_HEIGHT);
         edges.add(p.edge);
 
         endEdges(p.leftChild);
@@ -144,8 +144,8 @@ public class EventHandler {
 
         // Create new edges and split the parabola
         Point start = new Point(p.x, getY(par.point, p.x));
-        Edge el = new Edge(start, par.point, p);
-        Edge er = new Edge(start, p, par.point);
+        Edge el = new Edge(start, par.point, p, CORNER_EDGE_WIDTH, CORNER_EDGE_HEIGHT);
+        Edge er = new Edge(start, p, par.point,  CORNER_EDGE_WIDTH, CORNER_EDGE_HEIGHT);
         el.neighbour = er;
         er.neighbour = el;
         par.edge = el;
@@ -198,8 +198,8 @@ public class EventHandler {
         Point p = new Point(e.p.x, getY(p1.point, e.p.x));
 
         // end edges!
-        xl.edge.end = p;
-        xr.edge.end = p;
+        xl.edge.setEnd(p, CORNER_EDGE_WIDTH,CORNER_EDGE_HEIGHT);
+        xr.edge.setEnd(p, CORNER_EDGE_WIDTH,CORNER_EDGE_HEIGHT);
         edges.add(xl.edge);
         edges.add(xr.edge);
 
@@ -211,7 +211,7 @@ public class EventHandler {
             if (par == xl) higher = xl;
             if (par == xr) higher = xr;
         }
-        higher.edge = new Edge(p, p0.point, p2.point);
+        higher.edge = new Edge(p, p0.point, p2.point, CORNER_EDGE_WIDTH, CORNER_EDGE_HEIGHT);
 
         // delete p1 and parent (boundary edge) from beach line
         Parabola gparent = p1.parent.parent;
