@@ -15,14 +15,12 @@ import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Popup;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -123,17 +121,32 @@ public class App extends Application {
         Group nodes = new Group(mapPane);
         ArrayList<Point> listNodes = service.serviceCoords(mapVal);
 
+        int id = 0;
         for (Point point : listNodes) {
             Circle node = new Circle();
-
-
             node.setCenterX(point.x);
             node.setCenterY(point.y);
             node.setRadius(5.0);
 
+            int finalId = id;
+            node.setOnMouseEntered(e->{
+                Label name = new Label(service.getNodeInfoName(finalId));
+                name.setBackground(Background.fill(Color.WHITE));
+                Popup popup = new Popup();
+                popup.getContent().add(name);
+                popup.show(node,e.getSceneX() + 10, e.getSceneY() + 10);
+
+                node.setOnMouseExited(ev->{
+                    popup.hide();
+                });
+            });
+
+
             node.setStroke(Color.BLACK);
             node.setFill(Color.CYAN);
             nodes.getChildren().add(node);
+
+            id++;
         }
 
         // Wrap everything in a ScrollPane for panning

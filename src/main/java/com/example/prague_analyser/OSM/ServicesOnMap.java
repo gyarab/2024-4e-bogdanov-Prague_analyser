@@ -22,6 +22,7 @@ import static com.example.prague_analyser.OSM.CalculateTile.getConvertedNodesCoo
 public class ServicesOnMap {
     int TYPE = 0;
     String query;
+    ArrayList<JsonNode> allInfo = new ArrayList<>();
 
     public void serviceType(String serviceType){
 
@@ -113,7 +114,7 @@ public class ServicesOnMap {
         JsonNode elements = rootNode.path("elements");
 
         ArrayList<Point> listCord = new ArrayList<>();
-
+        setJSONInfo(elements);
         //staci jedna zastavka
         if(TYPE == 1) {
             HashMap<String, double[]> uniqueElement = new HashMap();
@@ -147,5 +148,13 @@ public class ServicesOnMap {
             }
         }
         return listCord;
+    }
+    private void setJSONInfo(JsonNode e){
+        for(JsonNode element: e){
+         allInfo.add(element);
+        }
+    }
+    public String getNodeInfoName(int i){
+        return allInfo.get(i).get("tags").path("name").asText();
     }
 }
