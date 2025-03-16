@@ -3,6 +3,7 @@ module com.example.prague_analyser {
     requires javafx.fxml;
     requires com.fasterxml.jackson.databind;
     requires okhttp3;
+    requires java.desktop;
 
 
     opens com.example.prague_analyser to javafx.fxml;

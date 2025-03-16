@@ -19,7 +19,9 @@ import static com.example.prague_analyser.OSM.CalculateTile.getConvertedNodesCoo
 
 public class ServicesOnMap {
     int TYPE = 0;
-    String key, value;
+    boolean metro = false;
+    static String key;
+    String value;
     ArrayList<JsonNode> allInfo = new ArrayList<>();
     Map<String, String[]> categoryMap = new HashMap();
 
@@ -36,17 +38,28 @@ public class ServicesOnMap {
         categoryMap.put("bus", new String[]{"highway", "bus_stop"});
         categoryMap.put("tramvaj", new String[]{"railway", "tram_stop"});
 
-        if(categoryMap.containsKey(serviceType)){
-            if(serviceType.equals("metro") || serviceType.equals("bus")|| serviceType.equals("tramvaj")) TYPE = 1;
-
-            String[] selectedCategory = categoryMap.get(serviceType);
-            key = selectedCategory[0];
-            value = selectedCategory[1];
+        if(categoryMap.containsKey(serviceType)) {
+            if (serviceType.equals("metro") || serviceType.equals("bus") || serviceType.equals("tramvaj")) TYPE = 1;
+            if (serviceType.equals("metro")){
+                key = """
+                        node[railway=station][station=subway](area.searchArea);
+                        """;
+                metro = true;
+            }else {
+                String[] selectedCategory = categoryMap.get(serviceType);
+                key = selectedCategory[0];
+                value = selectedCategory[1];
+            }
         } else {
-          String parts[] = serviceType.split(";");
-          if (parts.length != 2)return;
-          key = parts[0];
-          value = parts[1];
+            String parts[] = serviceType.split(";");
+            if (parts.length != 2 || parts[1].equals(" ")) {
+                key = serviceType;
+                metro = true;
+            } else {
+                key = parts[0];
+                value = parts[1];
+
+            }
         }
     }
 
@@ -56,9 +69,12 @@ public class ServicesOnMap {
 
         OkHttpClient client = new OkHttpClient();
         String overpassUrl = "https://overpass-api.de/api/interpreter";
-
-        String fullQuery = createOverpassQuery(key, value);
-
+        String fullQuery;
+        if(!metro ) {
+            fullQuery = createOverpassQuery(key, value);
+        }else {
+            fullQuery = createOverpassQuery();
+        }
         String encodedQuery = URLEncoder.encode(fullQuery, StandardCharsets.UTF_8);
         Request request = new Request.Builder()
                 .url(overpassUrl + "?data=" + encodedQuery)
@@ -95,6 +111,22 @@ public class ServicesOnMap {
         return listCord;
     }
 
+    private String createOverpassQuery() {
+        return """
+                [out:json];
+                        area["ISO3166-1"="CZ"]->.cz;
+                        area["name"="Praha"]["admin_level"="8"](area.cz)->.searchArea;
+                         ( 
+                """
+                + key +
+                """
+                 );
+                out center;     
+                 """;
+
+    }
+
+
     private static String createOverpassQuery(String key, String value) {
         return String.format("""
                 [out:json];
@@ -105,7 +137,7 @@ public class ServicesOnMap {
                   way["%s"="%s"](area.searchArea);
                   relation["%s"="%s"](area.searchArea);
                 );
-                out geom;
+                out center;
                 """, key, value, key, value, key, value);
     }
 

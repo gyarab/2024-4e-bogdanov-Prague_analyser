@@ -15,18 +15,24 @@ import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
-import javafx.stage.Popup;
-import javafx.stage.Screen;
-import javafx.stage.Stage;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
+import javafx.stage.*;
 import javafx.stage.Window;
 import javafx.util.Duration;
 
+import java.awt.*;
+import java.net.URI;
 import java.util.ArrayList;
 
 
@@ -112,12 +118,23 @@ public class App extends Application {
         });
 
         help.setOnMouseClicked(ev->{
-            Label helpText = new Label("The predefined services are pharmacy, hospital, school, supermarket, metro station, tram, " +
-                    "and bus stop.\n For these services, simply enter one of the following options: lékárna, nemocnice, škola, supermarket, metro, tramvaj, bus.\n" +
-                    " If you want to specify your own, use the 'key;value' format. For example, for a school, the correct format is \"amenity;school\".\n" +
+            Hyperlink turbo = new Hyperlink("here");
+            turbo.setOnAction(event -> openLink("https://overpass-turbo.eu/"));
+
+            Text helpTextStart = new Text("The predefined services are pharmacy, hospital, school, " +
+                    "supermarket, metro station, tram,and bus stop.\n For these services, simply enter one of " +
+                    "the following options: lékárna, nemocnice, škola, supermarket, metro, tramvaj, bus.\n" +
+                    " If you want to specify your own, use the 'key;value' format or write overpass query just for node line" +
+                    "and familiar lines as relation or way, in the end of the query add space (' ').\n" +
+                    " For example, for a school, the correct format is \"amenity;school\".\n" +
                     "\n" +
-                    "To test it, you can use this page: https://overpass-turbo.eu/ and find more details in the OSM documentation.");
+                    "To test it, you can use this page: ");
+            Text helpTextEnd = new Text(" or find more details in the OSM documentation.");
+
+            TextFlow helpText = new TextFlow(helpTextStart, turbo, helpTextEnd);
             helpText.setStyle("-fx-background-color: white; -fx-border-color: black; -fx-padding: 10px;");
+
+
 
             Popup popup = new Popup();
             popup.getContent().add(helpText);
@@ -150,14 +167,15 @@ public class App extends Application {
         alert.setTitle("Exception-PragueAnalyser");
         alert.setHeaderText("An error during process");
         alert.setContentText("An error has likely occurred somewhere. You may have entered the key and value incorrectly.\n" +
-                "Please make sure it is in the format key;value. If the problem persists, please contact support.");
+                "Please make sure it is in the format key;value or query is not right. If the problem persists and you are sure it is correct" +
+                ", please contact support.");
 
         alert.showAndWait();
     }
 
     private void loadingScreen(Stage stage,String category ){
         ProgressIndicator progressIndicator = new ProgressIndicator();
-        Label loadingLabel = new Label("Načítání...");
+        Label loadingLabel = new Label("Loading...");
 
         VBox loadingLayout = new VBox(20, progressIndicator, loadingLabel);
         loadingLayout.setAlignment(Pos.CENTER);
@@ -188,7 +206,7 @@ public class App extends Application {
         delay.play();
 
         stage.setScene(loadingScene);
-        stage.setTitle("Načítání...");
+        stage.setTitle("Loading...");
         stage.show();
     }
 
@@ -221,7 +239,9 @@ public class App extends Application {
                 name.setBackground(Background.fill(Color.WHITE));
                 Popup popup = new Popup();
                 popup.getContent().add(name);
-                popup.show(node,e.getSceneX() , e.getSceneY());
+                double absX = node.localToScreen(e.getX(), e.getY()).getX();
+                double absY = node.localToScreen(e.getX(), e.getY()).getY();
+                popup.show(node, absX + 10, absY + 10);
 
                 node.setOnMouseExited(ev->{
                     popup.hide();
@@ -235,6 +255,15 @@ public class App extends Application {
 
             id++;
         }
+
+        Hyperlink osmLicense = new Hyperlink("© OpenStreetMap contributors");
+        osmLicense.setOnAction(event -> openLink("https://www.openstreetmap.org/copyright"));
+
+        osmLicense.setStyle("-fx-text-fill: gray; -fx-underline: true;-fx-background-color: white; -fx-border-color: black;");
+        HBox link = new HBox(osmLicense);
+
+        link.setStyle("-fx-alignment: bottom-right;");
+        nodes.getChildren().add(link);
 
         // Wrap everything in a ScrollPane for panning
         ScrollPane scrollPane = new ScrollPane();
@@ -254,9 +283,58 @@ public class App extends Application {
         root.setPadding(new Insets(20, 20, 20, 20));
         Scene scene = new Scene(root, 800, 600); // Set initial scene size
 
+        root.setOnKeyPressed(ev->{
+            if (ev.getCode() == KeyCode.ESCAPE) {
+                exitStage(stage);
+            }
+        });
+
         stage.setTitle("Prague Analyser-" + category);
         stage.setScene(scene);
         stage.show();
+    }
+
+    private void exitStage(Stage stage){
+        Stage exitStage = new Stage();
+        exitStage.initModality(Modality.APPLICATION_MODAL); // Blokuje hlavní okno
+        exitStage.initStyle(StageStyle.UTILITY); // Menší styl okna
+
+
+        Button btnExit = new Button("Exit");
+        btnExit.setPrefWidth(150);
+        btnExit.setOnAction(event -> System.exit(0)); // Zavře aplikaci
+
+        Button btnMainMenu = new Button("Back to main menu");
+        btnMainMenu.setPrefWidth(150);
+        btnMainMenu.setOnAction(event -> {
+            try {
+                start(exitStage);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            exitStage.close();
+            stage.close();
+        });
+
+        Button btnCancel = new Button("Cancel");
+        btnCancel.setPrefWidth(150);
+        btnCancel.setOnAction(event -> exitStage.close()); // Zavře okno
+
+        VBox layout = new VBox(10, btnExit, btnMainMenu, btnCancel);
+        layout.setStyle("-fx-padding: 20px; -fx-alignment: center;");
+
+        Scene scene = new Scene(layout, 250, 150);
+        exitStage.setScene(scene);
+        exitStage.setTitle("Exit menu");
+        exitStage.showAndWait();
+    }
+
+    private void openLink(String url) {
+        try {
+            Desktop.getDesktop().browse(new URI(url));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void main(String[] args) {
