@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 
 import com.example.prague_analyser.FortunesALG.VoronoiGraph.Point;
@@ -21,36 +19,35 @@ import static com.example.prague_analyser.OSM.CalculateTile.getConvertedNodesCoo
 
 public class ServicesOnMap {
     int TYPE = 0;
-    String query;
+    String key, value;
     ArrayList<JsonNode> allInfo = new ArrayList<>();
+    Map<String, String[]> categoryMap = new HashMap();
+
 
     public void serviceType(String serviceType){
 
-        if(serviceType.equals("Metro")){
-            TYPE = 1;
-            query = """
-                    node["railway"="station"]["station"="subway"](area.searchArea);
-                    """;
-        }
-        //ujistit se, ze zastavka tam je jen jednou
-        //Praha na Slovensku = problem
-        if(serviceType.equals("Bus")){
-            TYPE = 1;
-            query = """
-                    (
-                      node["highway"="bus_stop"](area.searchArea);
-                      node["public_transport"="platform"]["bus"="yes"](area.searchArea);
-                    );
-                    """;
-        }
-        if(serviceType.equals("Lekarna")){
-            TYPE = 0;
-            query = """
-                    node["amenity"="pharmacy"](area.searchArea);
-                    """;
+        categoryMap.put("lékárna", new String[]{"amenity", "pharmacy"});
+        categoryMap.put("nemocnice", new String[]{"amenity", "hospital"});
+        categoryMap.put("supermarket", new String[]{"shop", "supermarket"});
+        categoryMap.put("škola", new String[]{"amenity", "school"});
 
-        }
 
+        categoryMap.put("metro", new String[]{"railway", "subway_entrance"});
+        categoryMap.put("bus", new String[]{"highway", "bus_stop"});
+        categoryMap.put("tramvaj", new String[]{"railway", "tram_stop"});
+
+        if(categoryMap.containsKey(serviceType)){
+            if(serviceType.equals("metro") || serviceType.equals("bus")|| serviceType.equals("tramvaj")) TYPE = 1;
+
+            String[] selectedCategory = categoryMap.get(serviceType);
+            key = selectedCategory[0];
+            value = selectedCategory[1];
+        } else {
+          String parts[] = serviceType.split(";");
+          if (parts.length != 2)return;
+          key = parts[0];
+          value = parts[1];
+        }
     }
 
 
@@ -59,15 +56,8 @@ public class ServicesOnMap {
 
         OkHttpClient client = new OkHttpClient();
         String overpassUrl = "https://overpass-api.de/api/interpreter";
-        String fullQuery = """
-                [out:json];
-                area["ISO3166-1"="CZ"]->.cz;
-                area["name"="Praha"]["admin_level"="8"](area.cz)->.searchArea; 
-                """
-                + query +
-                """
-                out body;
-                """; // musi byt nastaveno v Čr, protože Praha je i na Slovensku
+
+        String fullQuery = createOverpassQuery(key, value);
 
         String encodedQuery = URLEncoder.encode(fullQuery, StandardCharsets.UTF_8);
         Request request = new Request.Builder()
@@ -93,10 +83,8 @@ public class ServicesOnMap {
             } catch (IOException e) {
                 System.out.println("IOException occurred: " + e.getMessage());
             }
-
             // Increment the retry count and wait before retrying
             retryCount++;
-            System.out.println("Retrying... (" + retryCount + "/" + maxRetries + ")");
             try {
                 Thread.sleep(retryDelay); // Wait before the next retry
             } catch (InterruptedException ie) {
@@ -107,6 +95,20 @@ public class ServicesOnMap {
         return listCord;
     }
 
+    private static String createOverpassQuery(String key, String value) {
+        return String.format("""
+                [out:json];
+                area["ISO3166-1"="CZ"]->.cz;
+                area["name"="Praha"]["admin_level"="8"](area.cz)->.searchArea;
+                (
+                  node["%s"="%s"](area.searchArea);
+                  way["%s"="%s"](area.searchArea);
+                  relation["%s"="%s"](area.searchArea);
+                );
+                out geom;
+                """, key, value, key, value, key, value);
+    }
+
     private ArrayList<Point> extractCoordinates(String jsonResponse, Maps stat) throws IOException {
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -114,22 +116,24 @@ public class ServicesOnMap {
         JsonNode elements = rootNode.path("elements");
 
         ArrayList<Point> listCord = new ArrayList<>();
-        setJSONInfo(elements);
-        //staci jedna zastavka
+
         if(TYPE == 1) {
-            HashMap<String, double[]> uniqueElement = new HashMap();
             for (JsonNode element : elements) {
-                uniqueElement.put(
-                        element.get("tags").path("name").asText(),
-                        new double[]{element.path("lat").asDouble(), element.path("lon").asDouble()}
-                );
+                boolean checkDuplicity = false;
+                for (int i = 0; i < allInfo.size(); i++) {
+                    if(allInfo.get(i).get("tags").path("name").asText().equals(element.get("tags").path("name").asText())){
+                        checkDuplicity = true;
+                    }
+                }
+                if(!checkDuplicity){
+                    setJSONInfo(element);
+                }
             }
 
-            for (String key : uniqueElement.keySet()) {
-                System.out.println(key +" "+uniqueElement.get(key)[0]+ " " + uniqueElement.get(key)[1]);
+            for (JsonNode a : allInfo) {
                 Point point = getConvertedNodesCoord(
-                        uniqueElement.get(key)[0],
-                        uniqueElement.get(key)[1],
+                        a.path("lat").asDouble(),
+                        a.path("lon").asDouble(),
                         50.1764594, 14.2377536,
                         stat.min.zoom
                 );
@@ -137,6 +141,7 @@ public class ServicesOnMap {
             }
         } else {
             for (JsonNode element : elements) {
+                setJSONInfo(element);
                 Point point = getConvertedNodesCoord(
                         element.path("lat").asDouble(),
                         element.path("lon").asDouble(),
@@ -147,13 +152,14 @@ public class ServicesOnMap {
                 listCord.add(point);
             }
         }
+
         return listCord;
     }
+
     private void setJSONInfo(JsonNode e){
-        for(JsonNode element: e){
-         allInfo.add(element);
-        }
+        allInfo.add(e);
     }
+
     public String getNodeInfoName(int i){
         return allInfo.get(i).get("tags").path("name").asText();
     }

@@ -12,8 +12,6 @@ public class EventHandler {
     double CORNER_EDGE_WIDTH;
     double CORNER_EDGE_HEIGHT;
 
-    double width = 1;
-    double height = 1;
 
     double currentY;
 
