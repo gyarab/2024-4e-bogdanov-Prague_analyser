@@ -20,10 +20,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -33,7 +35,8 @@ import javafx.util.Duration;
 
 import java.awt.*;
 import java.net.URI;
-import java.util.ArrayList;
+import java.util.*;
+import java.util.List;
 
 
 public class App extends Application {
@@ -224,6 +227,10 @@ public class App extends Application {
         service.serviceType(category);
 
         Group nodes = new Group(mapPane);
+
+        Polygon polygon = new Polygon();
+        nodes.getChildren().add(polygon);
+
         ArrayList<Point> listNodes = service.serviceCoords(mapVal);
 
         int id = 0;
@@ -265,6 +272,8 @@ public class App extends Application {
         link.setStyle("-fx-alignment: bottom-right;");
         nodes.getChildren().add(link);
 
+
+
         // Wrap everything in a ScrollPane for panning
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setContent(nodes);
@@ -273,6 +282,9 @@ public class App extends Application {
         scrollPane.setVmax(mapVal.HEIGHT*256);
 
         EventHandler diagram = new EventHandler(listNodes, mapVal.WIDTH*256 , mapVal.HEIGHT*256);
+
+
+
         for(Edge e: diagram.edges){
             Line edge = new Line(e.start.x, e.start.y, e.end.x, e.end.y);
             edge.getStrokeDashArray().addAll((double) (mapVal.WIDTH*256), (double) (mapVal.HEIGHT*256));
@@ -286,6 +298,26 @@ public class App extends Application {
         root.setOnKeyPressed(ev->{
             if (ev.getCode() == KeyCode.ESCAPE) {
                 exitStage(stage);
+            }
+        });
+
+
+
+        scrollPane.setOnMouseClicked(ev->{
+            double clickX = scrollPane.getContent().sceneToLocal(ev.getSceneX(), ev.getSceneY()).getX();
+            double clickY = scrollPane.getContent().sceneToLocal(ev.getSceneX(), ev.getSceneY()).getY();
+
+            if (ev.getButton() == MouseButton.SECONDARY) {
+                polygon.getPoints().addAll(clickX,clickY);
+                cleanAndSortPolygon(polygon);
+                polygon.setStroke(Color.RED);
+                polygon.setFill(new Color(0, 0, 1, 0.3));
+            }
+        });
+
+        root.setOnKeyPressed(ev->{
+            if (ev.getCode() == KeyCode.DELETE) {
+                polygon.getPoints().clear();
             }
         });
 
@@ -328,6 +360,66 @@ public class App extends Application {
         exitStage.setTitle("Exit menu");
         exitStage.showAndWait();
     }
+
+    private void cleanAndSortPolygon(Polygon polygon) {
+        // Step 1: Extract points from Polygon
+        List<Double> rawPoints = polygon.getPoints();
+        List<Point> points = new ArrayList<>();
+
+        for (int i = 0; i < rawPoints.size(); i += 2) {
+            points.add(new Point(rawPoints.get(i), rawPoints.get(i + 1)));
+        }
+
+        // Step 2: Compute Convex Hull (removes inside points)
+        List<Point> boundaryPoints = computeConvexHull(points);
+
+        // Step 3: Compute centroid
+        double centroidX = boundaryPoints.stream().mapToDouble(p -> p.x).average().orElse(0);
+        double centroidY = boundaryPoints.stream().mapToDouble(p -> p.y).average().orElse(0);
+
+        // Step 4: Sort by angle relative to centroid
+        boundaryPoints.sort(Comparator.comparingDouble(p -> Math.atan2(p.y - centroidY, p.x - centroidX)));
+
+        // Step 5: Update polygon with cleaned and sorted points
+        polygon.getPoints().clear();
+        for (Point p : boundaryPoints) {
+            polygon.getPoints().addAll(p.x, p.y);
+        }
+    }
+
+
+    //generovano ChatGPT
+    // Compute Convex Hull using Graham’s scan algorithm (removes inside points)
+    private List<Point> computeConvexHull(List<Point> points) {
+        if (points.size() < 3) return new ArrayList<>(points); // No need to filter
+
+        // Step 1: Find the lowest Y point (leftmost if tie)
+        Point minYPoint = Collections.min(points, Comparator.comparingDouble((Point p) -> p.y)
+                .thenComparingDouble(p -> p.x));
+
+        // Step 2: Sort points by polar angle with minYPoint
+        points.sort((p1, p2) -> {
+            double angle1 = Math.atan2(p1.y - minYPoint.y, p1.x - minYPoint.x);
+            double angle2 = Math.atan2(p2.y - minYPoint.y, p2.x - minYPoint.x);
+            return Double.compare(angle1, angle2);
+        });
+
+        // Step 3: Use stack to build convex hull
+        List<Point> hull = new ArrayList<>();
+        for (Point p : points) {
+            while (hull.size() >= 2 && crossProduct(hull.get(hull.size() - 2), hull.get(hull.size() - 1), p) <= 0) {
+                hull.remove(hull.size() - 1);
+            }
+            hull.add(p);
+        }
+        return hull;
+    }
+
+    // Helper function to compute cross product
+    private double crossProduct(Point a, Point b, Point c) {
+        return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    }
+
 
     private void openLink(String url) {
         try {
