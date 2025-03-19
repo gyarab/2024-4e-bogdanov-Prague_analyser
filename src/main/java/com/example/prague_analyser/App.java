@@ -13,6 +13,7 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -36,7 +37,6 @@ import javafx.util.Duration;
 import java.awt.*;
 import java.net.URI;
 import java.util.*;
-import java.util.List;
 
 import static com.example.prague_analyser.Calculations.cleanAndSortPolygon;
 
@@ -219,6 +219,7 @@ public class App extends Application {
     int currPolygon = 1;
     private void showMainScene(Stage stage, String category){
 
+
         Maps mapVal = new Maps();
         Pane mapPane = null;
         try {
@@ -273,7 +274,6 @@ public class App extends Application {
         nodes.getChildren().add(link);
 
 
-
         // Wrap everything in a ScrollPane for panning
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setContent(nodes);
@@ -287,6 +287,16 @@ public class App extends Application {
             edge.getStrokeDashArray().addAll((double) (mapVal.WIDTH*256), (double) (mapVal.HEIGHT*256));
             nodes.getChildren().add(edge);
         }
+
+
+        Button btnExit = new Button();
+        Button btnPrevPoly = new Button();
+        Button btnNextPoly = new Button();
+        Button btnClearPoly = new Button();
+        Button btnReset = new Button();
+        Button btnRemovePoly = new Button();
+        Button btnCreatePoly = new Button();
+
 
         StackPane root = new StackPane(scrollPane);
         root.setPadding(new Insets(20, 20, 20, 20));
@@ -303,6 +313,36 @@ public class App extends Application {
             if (ev.getCode() == KeyCode.ESCAPE) {
                 exitStage(stage);
             }
+        });
+
+        btnExit.setOnAction(ev ->{
+           exitStage(stage);
+        });
+
+        btnPrevPoly.setOnAction(ev ->{
+            prevPolygon(polygons);
+        });
+
+        btnNextPoly.setOnAction(ev ->{
+            nextPolygon();
+        });
+
+        btnClearPoly.setOnAction(ev ->{
+            clearPolygon(polygons);
+        });
+
+
+        btnCreatePoly.setOnAction(ev ->{
+            createPolygon(nodes, polygons);
+        });
+
+        btnRemovePoly.setOnAction(ev ->{
+            removePolygon(nodes, polygons);
+        });
+
+
+        btnReset.setOnAction(ev ->{
+            resetPolygons(nodes,polygons);
         });
 
         scrollPane.setOnMouseClicked(ev->{
@@ -325,43 +365,25 @@ public class App extends Application {
         });
 
         root.setOnKeyPressed(ev->{
-
             pressedKeys.add(ev.getCode());
 
             if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.N)) {
-                polygons.add(new Polygon());
-                nodes.getChildren().add(2,polygons.get(polygons.size()-1));
+                createPolygon(nodes, polygons);
             }
-
             if (ev.getCode() == KeyCode.DELETE) {
-               if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
-                   polygons.get(polygons.size()-currPolygon).getPoints().clear();
+                clearPolygon(polygons);
             }
             if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.A) && pressedKeys.contains(KeyCode.DELETE)) {
-                if(polygons.size() > 1) {
-                    polygons.remove(polygons.size() - currPolygon);
-                    nodes.getChildren().remove(2);
-                    currPolygon = 1;
-                }else{
-                    if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
-                        polygons.get(polygons.size()-currPolygon).getPoints().clear();
-                }
+                removePolygon(nodes, polygons);
             }
             if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.R)) {
-                nodes.getChildren().removeAll(polygons);
-                polygons.removeAll(polygons);
-                //reset
-                polygons.add(new Polygon());
-                nodes.getChildren().add(1, polygons.get(0));
-                currPolygon = 1;
+                resetPolygons(nodes,polygons);
             }
             if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.UP)) {
-                if(currPolygon > 1)
-                    currPolygon--;
+                nextPolygon();
             }
             if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.DOWN)){
-                if(currPolygon < polygons.size())
-                    currPolygon++;
+                prevPolygon(polygons);
             }
         });
 
@@ -410,7 +432,45 @@ public class App extends Application {
     }
 
 
+    private void resetPolygons(Group nodes, ArrayList<Polygon> polygons){
+        nodes.getChildren().removeAll(polygons);
+        polygons.removeAll(polygons);
+        //reset
+        polygons.add(new Polygon());
+        nodes.getChildren().add(1, polygons.get(0));
+        currPolygon = 1;
+    }
 
+    private void createPolygon(Group nodes, ArrayList<Polygon> polygons){
+        polygons.add(new Polygon());
+        nodes.getChildren().add(2, polygons.get(polygons.size()-1));
+    }
+
+    private void removePolygon(Group nodes, ArrayList<Polygon> polygons){
+        if(polygons.size() > 1) {
+            polygons.remove(polygons.size() - currPolygon);
+            nodes.getChildren().remove(2);
+            currPolygon = 1;
+        }else{
+            if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
+                polygons.get(polygons.size()-currPolygon).getPoints().clear();
+        }
+    }
+
+    private void clearPolygon(ArrayList<Polygon> polygons){
+        if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
+            polygons.get(polygons.size()-currPolygon).getPoints().clear();
+    }
+
+    private void nextPolygon(){
+        if(currPolygon > 1)
+            currPolygon--;
+    }
+
+    private void prevPolygon(ArrayList<Polygon> polygons){
+        if(currPolygon < polygons.size())
+            currPolygon++;
+    }
 
     private void openLink(String url) {
         try {
