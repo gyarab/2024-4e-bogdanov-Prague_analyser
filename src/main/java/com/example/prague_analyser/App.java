@@ -38,6 +38,8 @@ import java.net.URI;
 import java.util.*;
 import java.util.List;
 
+import static com.example.prague_analyser.Calculations.cleanAndSortPolygon;
+
 
 public class App extends Application {
 
@@ -214,7 +216,9 @@ public class App extends Application {
     }
 
 
+    int currPolygon = 1;
     private void showMainScene(Stage stage, String category){
+
         Maps mapVal = new Maps();
         Pane mapPane = null;
         try {
@@ -227,10 +231,6 @@ public class App extends Application {
         service.serviceType(category);
 
         Group nodes = new Group(mapPane);
-
-        Polygon polygon = new Polygon();
-        nodes.getChildren().add(polygon);
-
         ArrayList<Point> listNodes = service.serviceCoords(mapVal);
 
         int id = 0;
@@ -282,9 +282,6 @@ public class App extends Application {
         scrollPane.setVmax(mapVal.HEIGHT*256);
 
         EventHandler diagram = new EventHandler(listNodes, mapVal.WIDTH*256 , mapVal.HEIGHT*256);
-
-
-
         for(Edge e: diagram.edges){
             Line edge = new Line(e.start.x, e.start.y, e.end.x, e.end.y);
             edge.getStrokeDashArray().addAll((double) (mapVal.WIDTH*256), (double) (mapVal.HEIGHT*256));
@@ -295,30 +292,81 @@ public class App extends Application {
         root.setPadding(new Insets(20, 20, 20, 20));
         Scene scene = new Scene(root, 800, 600); // Set initial scene size
 
-        root.setOnKeyPressed(ev->{
+
+        ArrayList<Polygon> polygons = new ArrayList<>();
+        polygons.add(new Polygon());
+        nodes.getChildren().add(1, polygons.get(0));
+
+        Set<KeyCode> pressedKeys = new HashSet<>();
+
+        scene.setOnKeyPressed(ev->{
             if (ev.getCode() == KeyCode.ESCAPE) {
                 exitStage(stage);
             }
         });
-
-
 
         scrollPane.setOnMouseClicked(ev->{
             double clickX = scrollPane.getContent().sceneToLocal(ev.getSceneX(), ev.getSceneY()).getX();
             double clickY = scrollPane.getContent().sceneToLocal(ev.getSceneX(), ev.getSceneY()).getY();
 
             if (ev.getButton() == MouseButton.SECONDARY) {
-                polygon.getPoints().addAll(clickX,clickY);
-                cleanAndSortPolygon(polygon);
-                polygon.setStroke(Color.RED);
-                polygon.setFill(new Color(0, 0, 1, 0.3));
+                if(polygons.get(polygons.size() - 1).getPoints().isEmpty()) {
+                    double colorR = ((polygons.size() * 123) % 255) / 255.0;
+                    double colorG = ((polygons.size() * 321) % 255) / 255.0;
+                    double colorB = ((polygons.size() * 213) % 255) / 255.0;
+
+                    polygons.get(polygons.size() - currPolygon).setStroke(Color.RED);
+                    polygons.get(polygons.size() - currPolygon).setFill(new Color(colorR, colorG, colorB, 0.3));
+                }
+
+                polygons.get(polygons.size()-currPolygon).getPoints().addAll(clickX,clickY);
+                cleanAndSortPolygon(polygons.get(polygons.size()-currPolygon));
             }
         });
 
         root.setOnKeyPressed(ev->{
-            if (ev.getCode() == KeyCode.DELETE) {
-                polygon.getPoints().clear();
+
+            pressedKeys.add(ev.getCode());
+
+            if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.N)) {
+                polygons.add(new Polygon());
+                nodes.getChildren().add(2,polygons.get(polygons.size()-1));
             }
+
+            if (ev.getCode() == KeyCode.DELETE) {
+               if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
+                   polygons.get(polygons.size()-currPolygon).getPoints().clear();
+            }
+            if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.A) && pressedKeys.contains(KeyCode.DELETE)) {
+                if(polygons.size() > 1) {
+                    polygons.remove(polygons.size() - currPolygon);
+                    nodes.getChildren().remove(2);
+                    currPolygon = 1;
+                }else{
+                    if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
+                        polygons.get(polygons.size()-currPolygon).getPoints().clear();
+                }
+            }
+            if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.R)) {
+                nodes.getChildren().removeAll(polygons);
+                polygons.removeAll(polygons);
+                //reset
+                polygons.add(new Polygon());
+                nodes.getChildren().add(1, polygons.get(0));
+                currPolygon = 1;
+            }
+            if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.UP)) {
+                if(currPolygon > 1)
+                    currPolygon--;
+            }
+            if (pressedKeys.contains(KeyCode.CONTROL) && pressedKeys.contains(KeyCode.DOWN)){
+                if(currPolygon < polygons.size())
+                    currPolygon++;
+            }
+        });
+
+        root.setOnKeyReleased(event -> {
+            pressedKeys.remove(event.getCode());
         });
 
         stage.setTitle("Prague Analyser-" + category);
@@ -361,64 +409,7 @@ public class App extends Application {
         exitStage.showAndWait();
     }
 
-    private void cleanAndSortPolygon(Polygon polygon) {
-        // Step 1: Extract points from Polygon
-        List<Double> rawPoints = polygon.getPoints();
-        List<Point> points = new ArrayList<>();
 
-        for (int i = 0; i < rawPoints.size(); i += 2) {
-            points.add(new Point(rawPoints.get(i), rawPoints.get(i + 1)));
-        }
-
-        // Step 2: Compute Convex Hull (removes inside points)
-        List<Point> boundaryPoints = computeConvexHull(points);
-
-        // Step 3: Compute centroid
-        double centroidX = boundaryPoints.stream().mapToDouble(p -> p.x).average().orElse(0);
-        double centroidY = boundaryPoints.stream().mapToDouble(p -> p.y).average().orElse(0);
-
-        // Step 4: Sort by angle relative to centroid
-        boundaryPoints.sort(Comparator.comparingDouble(p -> Math.atan2(p.y - centroidY, p.x - centroidX)));
-
-        // Step 5: Update polygon with cleaned and sorted points
-        polygon.getPoints().clear();
-        for (Point p : boundaryPoints) {
-            polygon.getPoints().addAll(p.x, p.y);
-        }
-    }
-
-
-    //generovano ChatGPT
-    // Compute Convex Hull using Graham’s scan algorithm (removes inside points)
-    private List<Point> computeConvexHull(List<Point> points) {
-        if (points.size() < 3) return new ArrayList<>(points); // No need to filter
-
-        // Step 1: Find the lowest Y point (leftmost if tie)
-        Point minYPoint = Collections.min(points, Comparator.comparingDouble((Point p) -> p.y)
-                .thenComparingDouble(p -> p.x));
-
-        // Step 2: Sort points by polar angle with minYPoint
-        points.sort((p1, p2) -> {
-            double angle1 = Math.atan2(p1.y - minYPoint.y, p1.x - minYPoint.x);
-            double angle2 = Math.atan2(p2.y - minYPoint.y, p2.x - minYPoint.x);
-            return Double.compare(angle1, angle2);
-        });
-
-        // Step 3: Use stack to build convex hull
-        List<Point> hull = new ArrayList<>();
-        for (Point p : points) {
-            while (hull.size() >= 2 && crossProduct(hull.get(hull.size() - 2), hull.get(hull.size() - 1), p) <= 0) {
-                hull.remove(hull.size() - 1);
-            }
-            hull.add(p);
-        }
-        return hull;
-    }
-
-    // Helper function to compute cross product
-    private double crossProduct(Point a, Point b, Point c) {
-        return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-    }
 
 
     private void openLink(String url) {
