@@ -81,7 +81,7 @@ public class Calculations {
                 double y1 = points.get(1);
                 double x2 = points.get(2);
                 double y2 = points.get(3);
-                return Math.sqrt(Math.pow(x2-x1,2) + Math.pow(y2-y1, 2));
+                return Math.sqrt(Math.pow(x2-x1,2) + Math.pow(y2-y1, 2)) / 1000;
             }else {
                 return 0;
             }
