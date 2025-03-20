@@ -35,9 +35,13 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 
 import java.awt.*;
+import java.awt.List;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.util.*;
 
+import static com.example.prague_analyser.Calculations.calculatePolygonArea;
 import static com.example.prague_analyser.Calculations.cleanAndSortPolygon;
 
 
@@ -217,6 +221,7 @@ public class App extends Application {
 
 
     int currPolygon = 1;
+    ArrayList<Double> polyArea = new ArrayList();
     private void showMainScene(Stage stage, String category){
 
 
@@ -280,6 +285,7 @@ public class App extends Application {
         scrollPane.setPannable(true);
         scrollPane.setHmax(mapVal.WIDTH*256);
         scrollPane.setVmax(mapVal.HEIGHT*256);
+        scrollPane.setMinSize(200,400);
 
         EventHandler diagram = new EventHandler(listNodes, mapVal.WIDTH*256 , mapVal.HEIGHT*256);
         for(Edge e: diagram.edges){
@@ -289,16 +295,37 @@ public class App extends Application {
         }
 
 
-        Button btnExit = new Button();
-        Button btnPrevPoly = new Button();
-        Button btnNextPoly = new Button();
-        Button btnClearPoly = new Button();
-        Button btnReset = new Button();
-        Button btnRemovePoly = new Button();
-        Button btnCreatePoly = new Button();
+        Button btnExit = new Button("Exit");
+        Button btnPrevPoly = new Button("Previous Polygon");
+        Button btnNextPoly = new Button("Next Polygon");
+        Button btnClearPoly = new Button("Delete");
+        Button btnReset = new Button("Reset");
+        Button btnRemovePoly = new Button("Remove");
+        Button btnCreatePoly = new Button("Create Polygon");
+
+        btnExit.setPrefWidth(150);
+        btnPrevPoly.setPrefWidth(150);
+        btnNextPoly.setPrefWidth(150);
+        btnClearPoly.setPrefWidth(150);
+        btnReset.setPrefWidth(150);
+        btnRemovePoly.setPrefWidth(150);
+        btnCreatePoly.setPrefWidth(150);
+
+        btnExit.setMinWidth(125);
+        btnPrevPoly.setMinWidth(125);
+        btnNextPoly.setMinWidth(125);
+        btnClearPoly.setMinWidth(125);
+        btnReset.setMinWidth(125);
+        btnRemovePoly.setMinWidth(125);
+        btnCreatePoly.setMinWidth(125);
 
 
-        StackPane root = new StackPane(scrollPane);
+        VBox buttons = new VBox();
+        buttons.getChildren().addAll(btnNextPoly, btnPrevPoly, btnCreatePoly, btnClearPoly, btnRemovePoly, btnReset, btnExit);
+        buttons.setPrefWidth(200);
+
+        HBox hb = new HBox(scrollPane, buttons);
+        StackPane root = new StackPane(hb);
         root.setPadding(new Insets(20, 20, 20, 20));
         Scene scene = new Scene(root, 800, 600); // Set initial scene size
 
@@ -308,6 +335,9 @@ public class App extends Application {
         nodes.getChildren().add(1, polygons.get(0));
 
         Set<KeyCode> pressedKeys = new HashSet<>();
+
+
+
 
         scene.setOnKeyPressed(ev->{
             if (ev.getCode() == KeyCode.ESCAPE) {
@@ -345,22 +375,60 @@ public class App extends Application {
             resetPolygons(nodes,polygons);
         });
 
+        Label info = new Label();
+
         scrollPane.setOnMouseClicked(ev->{
             double clickX = scrollPane.getContent().sceneToLocal(ev.getSceneX(), ev.getSceneY()).getX();
             double clickY = scrollPane.getContent().sceneToLocal(ev.getSceneX(), ev.getSceneY()).getY();
 
             if (ev.getButton() == MouseButton.SECONDARY) {
-                if(polygons.get(polygons.size() - 1).getPoints().isEmpty()) {
+                if(polygons.get(polygons.size() - currPolygon).getPoints().isEmpty()) {
                     double colorR = ((polygons.size() * 123) % 255) / 255.0;
                     double colorG = ((polygons.size() * 321) % 255) / 255.0;
                     double colorB = ((polygons.size() * 213) % 255) / 255.0;
 
                     polygons.get(polygons.size() - currPolygon).setStroke(Color.RED);
                     polygons.get(polygons.size() - currPolygon).setFill(new Color(colorR, colorG, colorB, 0.3));
+
                 }
+
+                polyArea.remove(calculatePolygonArea(polygons.get(polygons.size()-currPolygon)));
 
                 polygons.get(polygons.size()-currPolygon).getPoints().addAll(clickX,clickY);
                 cleanAndSortPolygon(polygons.get(polygons.size()-currPolygon));
+
+                double area = calculatePolygonArea(polygons.get(polygons.size()-currPolygon));
+                if(polyArea.isEmpty()) polyArea.add(area);
+                else {
+                    boolean added = false;
+                    for (int i = 0; i < polyArea.size(); i++) {
+                        if (area >= polyArea.get(i)) {
+                            polyArea.add(i, area);
+                            added = true;
+                            break;
+                        }
+                    }
+                    if(!added){
+                        polyArea.add(area);
+                    }
+                }
+
+                polygons.get(polygons.size() - currPolygon).setOnMouseEntered(e->{
+                    if(polygons.size() - currPolygon == 2) {
+                        info.setText("Information:\n" +
+                                "     area: " + new BigDecimal(area).setScale(4, RoundingMode.HALF_UP) + "km\n"
+                                + "     position: " + (polyArea.indexOf(area) + 1) + ".");
+                    }else {
+                        info.setText("Information:\n" +
+                                "     area: " +  new BigDecimal(area).setScale(4, RoundingMode.HALF_UP) + "km^2\n"
+                                + "     position: " + (polyArea.indexOf(area) + 1) + ".");
+                    }
+                    buttons.getChildren().add(info);
+
+                    polygons.get(polygons.size() - currPolygon).setOnMouseExited(event->{
+                         buttons.getChildren().remove(info);
+                    });
+                });
             }
         });
 
@@ -448,18 +516,19 @@ public class App extends Application {
 
     private void removePolygon(Group nodes, ArrayList<Polygon> polygons){
         if(polygons.size() > 1) {
+            polyArea.remove(calculatePolygonArea(polygons.get(polygons.size() - currPolygon)));
             polygons.remove(polygons.size() - currPolygon);
             nodes.getChildren().remove(2);
             currPolygon = 1;
         }else{
-            if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
-                polygons.get(polygons.size()-currPolygon).getPoints().clear();
+            clearPolygon(polygons);
         }
     }
 
     private void clearPolygon(ArrayList<Polygon> polygons){
         if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
             polygons.get(polygons.size()-currPolygon).getPoints().clear();
+            polyArea.remove(calculatePolygonArea(polygons.get(polygons.size() - currPolygon)));
     }
 
     private void nextPolygon(){

@@ -9,6 +9,10 @@ import java.util.Comparator;
 import java.util.List;
 
 public class Calculations {
+    //scale is 1:70 000
+    private static final double SCALE_METERS_PER_PIXEL = 19.109;//in meters https://wiki.openstreetmap.org/wiki/Zoom_levels
+
+
     //generovano ChatGPT
     // Compute Convex Hull using Graham’s scan algorithm (removes inside points)
     public static List<Point> computeConvexHull(List<Point> points) {
@@ -66,4 +70,38 @@ public class Calculations {
             polygon.getPoints().addAll(p.x, p.y);
         }
     }
+
+    public static double calculatePolygonArea(Polygon polygon){
+        List<Double> points = polygon.getPoints();
+        int n = points.size() / 2; // pocet vrcholu polygon je x a dalsi index y
+
+        if(n < 3){
+            if (n == 2){
+                double x1 = points.get(0);
+                double y1 = points.get(1);
+                double x2 = points.get(2);
+                double y2 = points.get(3);
+                return Math.sqrt(Math.pow(x2-x1,2) + Math.pow(y2-y1, 2));
+            }else {
+                return 0;
+            }
+        }
+
+        double sum1 = 0;
+        double sum2 = 0;
+
+        for (int i = 0; i < n; i++) {
+            double x1 = points.get(2 * i);
+            double y1 = points.get(2 * i + 1);
+            double x2 = points.get((2 * (i + 1)) % points.size());// zajistuje cyklus, takze se vratime na prvni bod
+            double y2 = points.get((2 * (i + 1) + 1) % points.size());
+
+            sum1 += x1 * y2;
+            sum2 += y1 * x2;
+        }
+
+        double areaPixels = Math.abs(sum1 - sum2) / 2.0;
+        return areaPixels * Math.pow(SCALE_METERS_PER_PIXEL / 1000, 2);
+    }
+
 }
