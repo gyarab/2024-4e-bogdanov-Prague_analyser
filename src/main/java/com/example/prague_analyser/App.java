@@ -13,7 +13,6 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -35,7 +34,6 @@ import javafx.stage.Window;
 import javafx.util.Duration;
 
 import java.awt.*;
-import java.awt.List;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
@@ -198,7 +196,7 @@ public class App extends Application {
                 showMainScene(stage, category);
             } catch (Exception e) {
                 stage.close();
-
+                e.printStackTrace();
                 // Zobrazení chybového dialogu mimo animaci
                 Platform.runLater(() -> showErrorDialog());
 
@@ -318,6 +316,7 @@ public class App extends Application {
         btnReset.setMinWidth(125);
         btnRemovePoly.setMinWidth(125);
         btnCreatePoly.setMinWidth(125);
+
 
 
         VBox buttons = new VBox();
@@ -501,6 +500,7 @@ public class App extends Application {
 
 
     private void resetPolygons(Group nodes, ArrayList<Polygon> polygons){
+        polyArea.remove(calculatePolygonArea(polygons.get(polygons.size() - currPolygon)));
         nodes.getChildren().removeAll(polygons);
         polygons.removeAll(polygons);
         //reset
@@ -527,8 +527,8 @@ public class App extends Application {
 
     private void clearPolygon(ArrayList<Polygon> polygons){
         if(!polygons.get(polygons.size()-currPolygon).getPoints().isEmpty())
-            polygons.get(polygons.size()-currPolygon).getPoints().clear();
             polyArea.remove(calculatePolygonArea(polygons.get(polygons.size() - currPolygon)));
+            polygons.get(polygons.size()-currPolygon).getPoints().clear();
     }
 
     private void nextPolygon(){

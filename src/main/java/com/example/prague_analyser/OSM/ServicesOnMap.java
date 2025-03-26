@@ -174,14 +174,14 @@ public class ServicesOnMap {
         } else {
             for (JsonNode element : elements) {
                 setJSONInfo(element);
+
                 Point point = getConvertedNodesCoord(
                         element.path("lat").asDouble(),
                         element.path("lon").asDouble(),
                         50.1764594, 14.2377536,
                         stat.min.zoom
                 );
-
-                listCord.add(point);
+                if(point.x != 0 && point.y != 0)listCord.add(point);
             }
         }
 

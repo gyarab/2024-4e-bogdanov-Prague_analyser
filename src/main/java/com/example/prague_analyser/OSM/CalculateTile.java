@@ -38,6 +38,9 @@ public class CalculateTile {
     public static Point getConvertedNodesCoord(
             double lat, double lon, double latStart, double lonStart,
             int zoom) {
+        if(lat == 0 && lon == 0){
+            return new Point(0,0);
+        }
 
         final int TILE_SIZE = 256; // Každá OSM dlaždice má 256x256 pixelů
 
@@ -49,8 +52,12 @@ public class CalculateTile {
         double x = ((lon + 180) / 360) * (TILE_SIZE * tilesPerRow);
         double y = (0.5 - (Math.log(Math.tan((Math.PI / 4) + (lat * Math.PI / 360))) / (2 * Math.PI))) * (TILE_SIZE * tilesPerRow);
 
+
+
         double finalX = x - xStart;
         double finalY = y - yStart;
+
+        System.out.println("finalX:" + x +" finalY:" + y );
 
         return new Point((int) finalX, (int) finalY); // Převod na int, protože souřadnice jsou v pixelech
     }
