@@ -1,0 +1,47 @@
+
+
+.root {
+    -fx-background-color: white;
+}
+
+
+
+.button-transparent {
+    -fx-padding: 10px 20px;
+    -fx-font-size: 15px;
+    -fx-background-radius: 8px;
+    -fx-min-width: 150px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 5, 0, 0, 1);
+    -fx-background-color: transparent;
+    -fx-border-color: #4a4a4a;
+    -fx-border-width: 2px;
+    -fx-text-fill: #4a4a4a;
+}
+
+.button-transparent:hover {
+    -fx-background-color: #d32f2f;
+    -fx-text-fill: #000000;
+}
+
+
+.info-text {
+    -fx-font-size: 14px;
+    -fx-text-fill: #555555;
+    -fx-padding: 5px;
+    -fx-background-color: #f9f9f9;
+    -fx-border-color: #d0d0d0;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-margin: 10px 0;
+}
+
+.button-container-exit {
+    -fx-spacing: 20px;
+    -fx-padding: 20px;
+}
+
+.button-container {
+    -fx-spacing: 20px;
+    -fx-padding: 20px;
+}

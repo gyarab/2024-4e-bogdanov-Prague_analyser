@@ -52,11 +52,17 @@ public class App extends Application {
         Stage welcomeStage = new Stage();
 
         TextField category = new TextField();
+        category.getStyleClass().add("text-field");
+
         Button help = new Button();
+        help.getStyleClass().add("button-help");
         HBox hb = new HBox(help);
 
         Label welcomeText = new Label("Welcome to Prague Analyser, choose service you want to analyse");
+        welcomeText.getStyleClass().add("title");
+
         Button btn = new Button("Analyse");
+        btn.getStyleClass().add("button-analysis");
 
         //Nastavení pevné šířky
         double fixedWidth = 150;
@@ -67,14 +73,6 @@ public class App extends Application {
 
         //nastaveni help loga
         help.setText(" ? ");
-        help.setStyle(
-                "-fx-font-size: 18px; -fx-text-fill: black;"+
-                "-fx-border-color: black; " +
-                        "-fx-border-width: 2px; " +
-                        "-fx-border-radius: 15px; " +
-                        "-fx-background-radius: 15px;"
-        );
-
         hb.setAlignment(Pos.TOP_RIGHT);
         hb.setStyle("-fx-padding: 20px;");
 
@@ -89,7 +87,8 @@ public class App extends Application {
         BorderPane welcomeRoot = new BorderPane();
         welcomeRoot.setTop(hb);
         welcomeRoot.setCenter(vb);
-        Scene welcomeScene = new Scene(welcomeRoot, 400, 250);
+        Scene welcomeScene = new Scene(welcomeRoot, 600, 600);
+        welcomeScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
         welcomeStage.setTitle("Welcome - Prague Analyser");
         welcomeStage.setScene(welcomeScene);
@@ -132,7 +131,7 @@ public class App extends Application {
                     "supermarket, metro station, tram,and bus stop.\n For these services, simply enter one of " +
                     "the following options: lékárna, nemocnice, škola, supermarket, metro, tramvaj, bus.\n" +
                     " If you want to specify your own, use the 'key;value' format or write overpass query just for node line" +
-                    "and familiar lines as relation or way, in the end of the query add space (' ').\n" +
+                    "and familiar lines as relation or way or nwr or node, in the end of the query add space (' ').\n" +
                     " For example, for a school, the correct format is \"amenity;school\".\n" +
                     "\n" +
                     "To test it, you can use this page: ");
@@ -189,6 +188,7 @@ public class App extends Application {
         loadingLayout.setPadding(new Insets(50));
 
         Scene loadingScene = new Scene(loadingLayout, 300, 200);
+        loadingScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
         PauseTransition delay = new PauseTransition(Duration.seconds(4));
         delay.setOnFinished(event -> {
@@ -317,16 +317,26 @@ public class App extends Application {
         btnRemovePoly.setMinWidth(125);
         btnCreatePoly.setMinWidth(125);
 
+        btnExit.getStyleClass().add("button-transparent");
+        btnPrevPoly.getStyleClass().add("button-transparent");
+        btnNextPoly.getStyleClass().add("button-transparent");
+        btnClearPoly.getStyleClass().add("button-transparent");
+        btnReset.getStyleClass().add("button-transparent");
+        btnRemovePoly.getStyleClass().add("button-transparent");
+        btnCreatePoly.getStyleClass().add("button-transparent");
+
 
 
         VBox buttons = new VBox();
         buttons.getChildren().addAll(btnNextPoly, btnPrevPoly, btnCreatePoly, btnClearPoly, btnRemovePoly, btnReset, btnExit);
+        buttons.getStyleClass().add("button-container");
         buttons.setPrefWidth(200);
 
         HBox hb = new HBox(scrollPane, buttons);
         StackPane root = new StackPane(hb);
         root.setPadding(new Insets(20, 20, 20, 20));
         Scene scene = new Scene(root, 800, 600); // Set initial scene size
+        scene.getStylesheets().add(getClass().getResource("/mainSceneStyle.css").toExternalForm());
 
 
         ArrayList<Polygon> polygons = new ArrayList<>();
@@ -422,6 +432,7 @@ public class App extends Application {
                                 "     area: " +  new BigDecimal(area).setScale(4, RoundingMode.HALF_UP) + "km^2\n"
                                 + "     position: " + (polyArea.indexOf(area) + 1) + ".");
                     }
+                    info.getStyleClass().add("info-text");
                     buttons.getChildren().add(info);
 
                     polygons.get(polygons.size() - currPolygon).setOnMouseExited(event->{
@@ -472,8 +483,10 @@ public class App extends Application {
         Button btnExit = new Button("Exit");
         btnExit.setPrefWidth(150);
         btnExit.setOnAction(event -> System.exit(0)); // Zavře aplikaci
+        btnExit.getStyleClass().add("button-exit-menu");
 
         Button btnMainMenu = new Button("Back to main menu");
+        btnMainMenu.getStyleClass().add("button-main-menu");
         btnMainMenu.setPrefWidth(150);
         btnMainMenu.setOnAction(event -> {
             try {
@@ -486,6 +499,7 @@ public class App extends Application {
         });
 
         Button btnCancel = new Button("Cancel");
+        btnCancel.getStyleClass().add("button-cancel");
         btnCancel.setPrefWidth(150);
         btnCancel.setOnAction(event -> exitStage.close()); // Zavře okno
 
@@ -493,6 +507,7 @@ public class App extends Application {
         layout.setStyle("-fx-padding: 20px; -fx-alignment: center;");
 
         Scene scene = new Scene(layout, 250, 150);
+        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
         exitStage.setScene(scene);
         exitStage.setTitle("Exit menu");
         exitStage.showAndWait();
