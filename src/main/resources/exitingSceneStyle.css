@@ -1,0 +1,41 @@
+
+.root {
+    -fx-background-color: linear-gradient(to bottom, #a8e6cf, #dcedc1);
+}
+
+
+.button {
+    -fx-padding: 10px 20px;
+    -fx-font-size: 12px;
+    -fx-background-radius: 8px;
+    -fx-min-width: 150px;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 5, 0, 0, 1);
+}
+
+
+.button-cancel {
+    -fx-background-color: #4CAF50;
+     -fx-text-fill: white;
+}
+.button-cancel:hover {
+    -fx-background-color: #388E3C;
+}
+
+
+.button-back {
+    -fx-background-color: #2196F3;
+    -fx-text-fill: white;
+}
+.button-help:hover {
+    -fx-background-color: #1976D2;
+}
+
+.button-exit {
+    -fx-background-color: #be4040;
+    -fx-text-fill: white;
+}
+
+.button-exit:hover {
+    -fx-background-color: #d32f2f;
+}

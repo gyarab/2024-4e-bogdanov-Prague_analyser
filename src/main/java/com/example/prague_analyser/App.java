@@ -318,13 +318,25 @@ public class App extends Application {
         btnCreatePoly.setMinWidth(125);
 
         btnExit.getStyleClass().add("button-transparent");
-        btnPrevPoly.getStyleClass().add("button-transparent");
-        btnNextPoly.getStyleClass().add("button-transparent");
-        btnClearPoly.getStyleClass().add("button-transparent");
-        btnReset.getStyleClass().add("button-transparent");
-        btnRemovePoly.getStyleClass().add("button-transparent");
-        btnCreatePoly.getStyleClass().add("button-transparent");
+        btnExit.getStyleClass().add("button-exit");
 
+        btnPrevPoly.getStyleClass().add("button-transparent");
+        btnPrevPoly.getStyleClass().add("button-prev");
+
+        btnNextPoly.getStyleClass().add("button-transparent");
+        btnNextPoly.getStyleClass().add("button-next");
+
+        btnClearPoly.getStyleClass().add("button-transparent");
+        btnClearPoly.getStyleClass().add("button-delete");
+
+        btnReset.getStyleClass().add("button-transparent");
+        btnReset.getStyleClass().add("button-reset");
+
+        btnRemovePoly.getStyleClass().add("button-transparent");
+        btnRemovePoly.getStyleClass().add("button-remove");
+
+        btnCreatePoly.getStyleClass().add("button-transparent");
+        btnCreatePoly.getStyleClass().add("button-create");
 
 
         VBox buttons = new VBox();
@@ -483,10 +495,10 @@ public class App extends Application {
         Button btnExit = new Button("Exit");
         btnExit.setPrefWidth(150);
         btnExit.setOnAction(event -> System.exit(0)); // Zavře aplikaci
-        btnExit.getStyleClass().add("button-exit-menu");
+        btnExit.getStyleClass().add("button-exit");
 
         Button btnMainMenu = new Button("Back to main menu");
-        btnMainMenu.getStyleClass().add("button-main-menu");
+        btnMainMenu.getStyleClass().add("button-back");
         btnMainMenu.setPrefWidth(150);
         btnMainMenu.setOnAction(event -> {
             try {
@@ -507,7 +519,7 @@ public class App extends Application {
         layout.setStyle("-fx-padding: 20px; -fx-alignment: center;");
 
         Scene scene = new Scene(layout, 250, 150);
-        scene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/exitingSceneStyle.css").toExternalForm());
         exitStage.setScene(scene);
         exitStage.setTitle("Exit menu");
         exitStage.showAndWait();

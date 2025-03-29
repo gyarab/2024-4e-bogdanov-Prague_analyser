@@ -1,7 +1,7 @@
 
 
 .root {
-    -fx-background-color: white;
+    -fx-background-color: #d8e2d8;
 }
 
 
@@ -9,7 +9,8 @@
 .button-transparent {
     -fx-padding: 10px 20px;
     -fx-font-size: 15px;
-    -fx-background-radius: 8px;
+    -fx-background-radius: 15px;
+    -fx-border-radius: 15px;
     -fx-min-width: 150px;
     -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 5, 0, 0, 1);
@@ -19,8 +20,23 @@
     -fx-text-fill: #4a4a4a;
 }
 
-.button-transparent:hover {
+.button-exit:hover {
     -fx-background-color: #d32f2f;
+    -fx-text-fill: #000000;
+}
+
+.button-prev:hover, .button-next:hover {
+    -fx-background-color: #455a64;
+    -fx-text-fill: #000000;
+}
+
+.button-delete:hover, .button-remove:hover, .button-reset:hover {
+    -fx-background-color: #ff8f00;
+    -fx-text-fill: #000000;
+}
+
+.button-create:hover {
+    -fx-background-color: #0277bd;
     -fx-text-fill: #000000;
 }
 
