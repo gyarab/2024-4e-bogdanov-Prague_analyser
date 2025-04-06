@@ -19,6 +19,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -90,6 +91,10 @@ public class App extends Application {
         Scene welcomeScene = new Scene(welcomeRoot, 600, 600);
         welcomeScene.getStylesheets().add(getClass().getResource("/style.css").toExternalForm());
 
+
+        java.net.URL imgULR = getClass().getResource("/com/example/prague_analyser/ikona.png");
+        javafx.scene.image.Image icon = new Image(String.valueOf(imgULR));
+        welcomeStage.getIcons().add(icon);
         welcomeStage.setTitle("Welcome - Prague Analyser");
         welcomeStage.setScene(welcomeScene);
 
@@ -164,6 +169,9 @@ public class App extends Application {
         double screenWidth = screen.getVisualBounds().getWidth();
         double screenHeight = screen.getVisualBounds().getHeight();
 
+        java.net.URL imgULR = getClass().getResource("/com/example/prague_analyser/ikona.png");
+        javafx.scene.image.Image icon = new Image(String.valueOf(imgULR));
+        stage.getIcons().add(icon);
         stage.setX((screenWidth - width) / 2);
         stage.setY((screenHeight - height) / 2);
     }
@@ -212,6 +220,9 @@ public class App extends Application {
         });
         delay.play();
 
+        java.net.URL imgULR = getClass().getResource("/com/example/prague_analyser/ikona.png");
+        javafx.scene.image.Image icon = new Image(String.valueOf(imgULR));
+        stage.getIcons().add(icon);
         stage.setScene(loadingScene);
         stage.setTitle("Loading...");
         stage.show();
@@ -481,6 +492,9 @@ public class App extends Application {
             pressedKeys.remove(event.getCode());
         });
 
+        java.net.URL imgULR = getClass().getResource("/com/example/prague_analyser/ikona.png");
+        javafx.scene.image.Image icon = new Image(String.valueOf(imgULR));
+        stage.getIcons().add(icon);
         stage.setTitle("Prague Analyser-" + category);
         stage.setScene(scene);
         stage.show();
@@ -520,6 +534,9 @@ public class App extends Application {
 
         Scene scene = new Scene(layout, 250, 150);
         scene.getStylesheets().add(getClass().getResource("/exitingSceneStyle.css").toExternalForm());
+        java.net.URL imgULR = getClass().getResource("/com/example/prague_analyser/ikona.png");
+        javafx.scene.image.Image icon = new Image(String.valueOf(imgULR));
+        exitStage.getIcons().add(icon);
         exitStage.setScene(scene);
         exitStage.setTitle("Exit menu");
         exitStage.showAndWait();
