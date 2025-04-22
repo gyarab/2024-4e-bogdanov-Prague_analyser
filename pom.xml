@@ -70,7 +70,7 @@
             <!-- Default configuration for running with: mvn clean javafx:run -->
             <id>default-cli</id>
             <configuration>
-              <mainClass>com.example.prague_analyser/com.example.prague_analyser.HelloApplication</mainClass>
+              <mainClass>com.example.prague_analyser/com.example.prague_analyser.App</mainClass>
               <launcher>app</launcher>
               <jlinkZipName>app</jlinkZipName>
               <jlinkImageName>app</jlinkImageName>
